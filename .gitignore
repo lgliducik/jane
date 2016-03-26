@@ -1,5 +1,6 @@
 *.json
 my_env
 credentials_file
-test.db
+*.db
 *.pyc
+views

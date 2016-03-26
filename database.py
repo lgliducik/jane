@@ -1,7 +1,7 @@
 from bottle.ext import sqlalchemy as bottle_sqlalchemy
 from sqlalchemy import create_engine, Column, Integer, Sequence, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import DateTime, Text, Boolean, Enum
+from sqlalchemy.types import DateTime, UnicodeText, Boolean, Enum
 from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
@@ -29,7 +29,7 @@ class GoogleCode(Base):
 class Document(Base):
     __tablename__ = 'documents'
     id = Column(Integer, Sequence('id_seq'), primary_key=True)
-    owner = Column(Text())
+    owner = Column(UnicodeText())
     #header = Column(Text())
     # link = Column(Text())
     creation_time = Column(DateTime())
