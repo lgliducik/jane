@@ -1,2 +1,5 @@
 *.json
 my_env
+credentials_file
+test.db
+*.pyc
