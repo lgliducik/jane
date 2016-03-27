@@ -1,11 +1,11 @@
 from bottle.ext import sqlalchemy as bottle_sqlalchemy
 from sqlalchemy import create_engine, Column, Integer, Sequence, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import DateTime, UnicodeText, Boolean, Enum
+from sqlalchemy.types import DateTime, UnicodeText, Boolean, Enum, Integer
 from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
-engine = create_engine('sqlite:///test.db', echo=True)
+engine = create_engine('sqlite:///documents.db', echo=True)
 
 sql_alchemy_plugin = bottle_sqlalchemy.Plugin(
     engine, # SQLAlchemy engine created with create_engine function.
@@ -16,29 +16,29 @@ sql_alchemy_plugin = bottle_sqlalchemy.Plugin(
     use_kwargs=False # If it is true and keyword is not defined, plugin uses **kwargs argument to inject session database (default False).
 )
 
-class GoogleCode(Base):
-    __tablename__ = 'google_code'
-    id = Column(Integer, Sequence('id_seq'), primary_key=True)
-    auth_code = Column(String(50))
-    google_id = Column(Integer)
+# class GoogleCode(Base):
+#     __tablename__ = 'google_code'
+#     id = Column(Integer, Sequence('id_seq'), primary_key=True)
+#     auth_code = Column(String(50))
+#     google_id = Column(Integer)
 
-    def __repr__(self):
-        return "<Entity('%d', '%s', '%d')>" % (self.id, self.auth_code, self.google_id)
+#     def __repr__(self):
+#         return "<Entity('%d', '%s', '%d')>" % (self.id, self.auth_code, self.google_id)
 
 
 class Document(Base):
     __tablename__ = 'documents'
     id = Column(Integer, Sequence('id_seq'), primary_key=True)
     owner = Column(UnicodeText())
-    #header = Column(Text())
-    # link = Column(Text())
     creation_time = Column(DateTime())
     modification_time = Column(DateTime())
-    # last_modification_author = Column(Text())
-    # is_public_access = Column(Boolean())
-    # type_access = Column('type_access', Enum('1','2','3'))
-    # permission_access = Column('permission_access', Enum('owner','reader','writer'))
-    # google_code_id = Column(Integer, ForeignKey('google_code.id'))
+    header = Column(UnicodeText())
+    link = Column(UnicodeText())
+    last_modification_author = Column(UnicodeText())
+    is_public_access = Column(Integer())
+    type_access = Column('type_access', Enum('1','2','3'))
+    permission_access = Column('permission_access', Enum('owner','reader','writer'))
+    #google_code_id = Column(Integer, ForeignKey('google_code.id'))
 
 def create_db():
     Session = sessionmaker(bind=engine)

@@ -9,3 +9,4 @@ flow = client.flow_from_clientsecrets(
     scope=['https://www.googleapis.com/auth/drive',
            'profile'],
     redirect_uri='http://localhost:8080/auth_result')
+flow.params['access_type'] = 'offline'

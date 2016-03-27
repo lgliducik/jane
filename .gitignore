@@ -4,3 +4,4 @@ credentials_file
 *.db
 *.pyc
 views
+*.log
