@@ -1,12 +1,20 @@
-from database import Document, engine, create_db
+from database import Document, engine, create_db, User
 from apiclient.discovery import build
-from google_api import flow, credentials_storage
+from google_api import flow #, credentials_storage
 import httplib2
 from arrow.arrow import parser 
 from apiclient import errors
 import logging
 from datetime import datetime
 import time
+
+import log
+
+
+# import oauth2client
+# from oauth2client.contrib.multistore_file import Storage
+import oauth2client
+from oauth2client.contrib.multistore_file import *
 # create formatter
 #formatter = logging.Formatter("%(asctime)s;%(message)s")
 
@@ -18,7 +26,7 @@ import time
 #     now = datetime.now()
 #     return datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")
 
-logging.basicConfig(filename='logging_fetcher.log', filemode='w', level=logging.DEBUG, format="%(asctime)s;%(message)s")
+#logging.basicConfig(filename='logging_fetcher.log', filemode='w', level=logging.DEBUG, format="%(asctime)s;%(message)s")
 
 datetime_parser = parser.DateTimeParser()
 
@@ -31,7 +39,7 @@ datetime_parser = parser.DateTimeParser()
 # permission_access = Column('permission_access', Enum('owner','reader','writer'))
 # google_code_id = Column(Integer, ForeignKey('google_code.id'))
 
-def get_documents(credentials):
+def get_documents(credentials, google_id):
     logging.info('get documents')
     auth_code = credentials.authorize(httplib2.Http())
     drive_service = build('drive', 'v2', http=auth_code)
@@ -55,7 +63,8 @@ def get_documents(credentials):
                     last_modification_author = file_['lastModifyingUserName'],
                     is_public_access = file_['shared'],
                     type_access = u'1' ,
-                    permission_access = file_['userPermission']['role']
+                    permission_access = file_['userPermission']['role'],
+                    google_code_id = google_id
                     )
 
 
@@ -66,16 +75,39 @@ def get_documents(credentials):
             print 'An error occurred: %s' % error
             break
 
-session = create_db()
+db = create_db()
 
 count = 0
+count_files = 0
+#while True:
 while True:
     time.sleep(5)
-    credentials = credentials_storage.get()
-    if credentials and count == 0:
-        for document in get_documents(credentials):
-            logging.info('add credentials to file')
-            session.add(document)
-        session.commit()
-        count = count + 1
-        break
+
+    #s = Storage('name_of_application', 'user1')
+    #import ipdb; ipdb.set_trace()
+    credential_keys = get_all_credential_keys('test_storage.txt')
+    for key in credential_keys:
+        
+        user_info = db.query(User).filter(User.google_id == key['clientId']).first()
+        if not user_info:
+            user_info = User(google_id = key['clientId'], is_download_data = False)
+            db.add(user_info)
+            db.commit()
+        if not user_info.is_download_data:
+            logging.info("user_info.is_download_data = %s", user_info.is_download_data)
+            logging.info('download files from google id %s', key['clientId'])
+            storage = get_credential_storage('test_storage.txt', key['clientId'], key['userAgent'], key['scope'])
+            credentials = storage.get()
+            #credentials = credentials_storage.get()
+            while credentials and count == 0:
+            #if credentials and count == 0:
+                for document in get_documents(credentials, key['clientId']):
+                    db.add(document)
+                    count_files = count_files + 1
+                db.commit()
+                count = count + 1
+                break
+
+            logging.info('download count = %d files from google id %s', count_files, key['clientId'])
+            count_files = 0
+            count = 0

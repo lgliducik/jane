@@ -1,16 +1,22 @@
 from bottle import route, run, template, redirect, request
 from beaker.middleware import SessionMiddleware
-from google_api import flow, credentials_storage
+from google_api import flow, scope #, credentials_storage
 from apiclient.discovery import build
 import httplib2
 import bottle
 from bottle import HTTPError
-from database import Document, sql_alchemy_plugin
+from database import Document, sql_alchemy_plugin, User, create_db
 from bottle import get, post, request
 from datetime import datetime
 import arrow
 import logging
 
+import funcy
+
+import oauth2client
+from oauth2client.contrib.multistore_file import get_credential_storage
+# from oauth2client.contrib.multistore_file
+import log
 
 app = bottle.Bottle()
 app.install(sql_alchemy_plugin)
@@ -21,10 +27,9 @@ session_opts = {
 }
 app_with_session = SessionMiddleware(app, session_opts)
 
+db = create_db()
+
 auth_uri = flow.step1_get_authorize_url()
-
-logging.basicConfig(filename='logging.log', filemode='w', level=logging.DEBUG, format="%(asctime)s;%(message)s")
-
 
 def get_time_now():
     now = datetime.now()
@@ -44,10 +49,21 @@ def auth_result(db):
     session = bottle.request.environ.get('beaker.session')
     auth_code = request.query.code
     credentials = flow.step2_exchange(auth_code)
-    credentials_storage.put(credentials)
+    #credentials_storage.put(credentials)
+
+    
+    
+
     #import ipdb; ipdb.set_trace()
 
     google_id = get_user_info(credentials)
+
+    storage = get_credential_storage('test_storage.txt', google_id, 'user_agent', scope)
+    #import ipdb; ipdb.set_trace()
+
+    #storage = Storage('jane', credentials.get_user_info()['email'])
+    storage.put(credentials)
+
     # add user
     # google_code = db.query(GoogleCode).filter_by(google_id=google_id).first()
     # if not google_code:
@@ -56,7 +72,19 @@ def auth_result(db):
 
     session['google_id'] = google_id
     session.save()
+
+    if not db.query(User).filter_by(google_id=google_id).first():
+        user = User(google_id = google_id, is_download_data = False)
+        db.add(user)
+        db.commit()
+    
+
     return redirect('/')
+
+@funcy.once
+def set_trace():
+    import ipdb;ipdb.set_trace()
+
 
 @app.route('/', method=['POST', 'GET'])
 def index(db):
@@ -64,10 +92,14 @@ def index(db):
     user_name = session.get('google_id')
     if user_name is None:
         return redirect(auth_uri)
-        logging.info('%s, don''t authorized user_name %s', get_time_now(), user_name)
+        logging.info('don''t authorized user_name %s', user_name)
     else:
-        logging.info('%s, authorized user_name %s', get_time_now(), user_name)
-        files_info = db.query(Document).all()
+        logging.info('authorized user_name %s', user_name)
+        #import ipdb; ipdb.set_trace()
+        #set_trace()
+        files_info = db.query(Document).filter(Document.google_code_id == user_name).all()
+
+        #files_info = db.query(Document).all()
         filtr_owner = ''
         modification_time_str = ''
         creation_time_str = ''
@@ -78,7 +110,7 @@ def index(db):
         type_access_str = ''
         permission_access_str = ''
         if request.method == 'POST':
-            logging.info('%s, method post', get_time_now())
+            logging.info('filtering files')
             filtr_owner = request.POST.dict['owner'][0]
             #print "filtr_owner", filtr_owner
             parser = arrow.parser.DateTimeParser()
@@ -105,7 +137,8 @@ def index(db):
                         last_modification_author=last_modification_author_str,
                         is_public_access=is_public_access_str,
                         type_access=type_access_str,
-                        permission_access=permission_access_str,)
+                        permission_access=permission_access_str,
+                        user_name = str(user_name))
 
 
 if __name__ == '__main__':

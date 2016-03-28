@@ -11,17 +11,16 @@ sql_alchemy_plugin = bottle_sqlalchemy.Plugin(
     engine, # SQLAlchemy engine created with create_engine function.
     Base.metadata, # SQLAlchemy metadata, required only if create=True.
     keyword='db', # Keyword used to inject session database in a route (default 'db').
-    create=True, # If it is true, execute `metadata.create_all(engine)` when plugin is applied (default False).
+    create=False, # If it is true, execute `metadata.create_all(engine)` when plugin is applied (default False).
     commit=True, # If it is true, plugin commit changes after route is executed (default True).
     use_kwargs=False # If it is true and keyword is not defined, plugin uses **kwargs argument to inject session database (default False).
 )
 
-# class GoogleCode(Base):
-#     __tablename__ = 'google_code'
-#     id = Column(Integer, Sequence('id_seq'), primary_key=True)
-#     auth_code = Column(String(50))
-#     google_id = Column(Integer)
-
+class User(Base):
+    __tablename__ = 'user'
+    id = Column(Integer, Sequence('id_seq'), primary_key=True)
+    google_id = Column(Integer)
+    is_download_data = Column(Boolean)
 #     def __repr__(self):
 #         return "<Entity('%d', '%s', '%d')>" % (self.id, self.auth_code, self.google_id)
 
@@ -38,9 +37,11 @@ class Document(Base):
     is_public_access = Column(Integer())
     type_access = Column('type_access', Enum('1','2','3'))
     permission_access = Column('permission_access', Enum('owner','reader','writer'))
-    #google_code_id = Column(Integer, ForeignKey('google_code.id'))
+    google_code_id = Column(Integer)
+
 
 def create_db():
+    Base.metadata.create_all(engine, checkfirst=True)
     Session = sessionmaker(bind=engine)
     Session.configure(bind=engine) 
     session = Session()

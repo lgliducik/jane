@@ -1,7 +1,9 @@
 #!/bin/bash
+#rm test_storage.txt
 rm documents.db
-rm session.db
+#rm session.db
 rm *.log
+
 
 
 trap 'killall' INT
