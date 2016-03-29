@@ -125,16 +125,6 @@ def index(db):
                 files_info = db.query(Document).filter(
                     Document.creation_time > creation_time,
                     Document.google_code_id == user_name)
-            modification_time_str = request.POST.dict['modification_time'][0]
-            if modification_time_str:
-                modification_time = parser.parse_iso(
-                    request.POST.dict['modification_time'][0])
-                log.info(
-                    'filtering files modification_time > %s',
-                    modification_time_str)
-                files_info = db.query(Document).filter(
-                    Document.modification_time > modification_time,
-                    Document.google_code_id == user_name)
 
             if filtr_header:
                 log.info(

@@ -4,31 +4,31 @@
 <p>User ID {{user_name}}</p>
 %if is_download_data:
   <form method="post" action="/">
-    <p><b>Владелец:</b><br>
+    <!-- <p><b>Владелец:</b><br>
     <input type="text" name='owner' 
     % if owner: 
       value={{owner}} 
     % end 
-    size="10">
-    <p><b>Время создания:</b><br>
+    size="10"> -->
+    <p><b>Время создания (Больше указанного):</b><br>
     <input type="datetime-local" name="creation_time"
     % if creation_time: 
       value={{creation_time}} 
     % end 
     size="10">
-    <p><b>Время модификации:</b><br>
+    <!-- <p><b>Время модификации (Больше указанного):</b><br>
     <input  type="text" name="modification_time" 
     % if modification_time: 
       value={{modification_time}} 
     % end 
-    size="10">
+    size="10"> -->
     <p><b>Заголовок:</b><br>
     <input type="text" name='header' 
     % if header: 
       value={{header}} 
     % end 
     size="10">
-    <p><b>Ссылка:</b><br>
+    <!-- <p><b>Ссылка:</b><br>
     <input type="text" name='link' 
     % if link: 
       value={{link}} 
@@ -57,7 +57,7 @@
     % if permission_access: 
       value={{permission_access}} 
     % end 
-    size="10">
+    size="10"> -->
     <p><input type="submit" method="post" value="Фильтровать">
   </form>
 
