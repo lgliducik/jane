@@ -1,3 +1,5 @@
+venv
+.idea/*
 *.json
 my_env
 credentials_file
@@ -5,4 +7,4 @@ credentials_file
 *.pyc
 views
 *.log
-text_storage.txt
+test_storage.txt

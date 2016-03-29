@@ -5,7 +5,6 @@ rm documents.db
 rm *.log
 
 
-
 trap 'killall' INT
 
 killall() {
