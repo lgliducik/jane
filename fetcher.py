@@ -8,10 +8,11 @@ import funcy
 import httplib2
 import logging
 import time
-import log
+import log as log_module
 
 
-log.configure_logging()
+log_module.configure_logging()
+
 log = logging.getLogger("fetcher")
 datetime_parser = parser.DateTimeParser()
 
@@ -70,6 +71,7 @@ def main():
     count = 0
     count_files = 0
     while True:
+        log.info("fetcher iteration")
         time.sleep(5)
         credential_keys = get_all_credential_keys('test_storage.txt')
         for key in credential_keys:
@@ -134,4 +136,8 @@ def main():
                 count = 0
 
 if __name__ == "__main__":
-    main()
+    while True:
+        try:
+            main()
+        except Exception: 
+            log.exception("uncaught error")
