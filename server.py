@@ -61,6 +61,7 @@ def auth_result(db):
     storage.put(credentials)
     if not db.query(User).filter_by(google_id=google_id).first():
         user = User(google_id=google_id, is_download_data=False)
+        logging.info('is_download_data %s', 'False')
         db.add(user)
         db.commit()
     return redirect('/')
@@ -68,8 +69,8 @@ def auth_result(db):
 
 @funcy.once
 def set_trace():
-    import ipdb
-    ipdb.set_trace()
+    import pdb
+    pdb.set_trace()
 
 
 @app.route('/', method=['POST', 'GET'])
@@ -81,6 +82,12 @@ def index(db):
         logging.info('don''t authorized user_name %s', user_name)
     else:
         logging.info('authorized user_name %s', user_name)
+        user_info = db.query(User).filter(
+                            User.google_id == user_name).first()
+        #set_trace()
+        if user_info:
+            if user_info.is_download_data:
+                is_download_data = user_info.is_download_data
         files_info = db.query(Document).filter(
                                     Document.google_code_id == user_name).all()
         filtr_owner = ''
@@ -112,7 +119,7 @@ def index(db):
                 files_info = db.query(Document).filter(Document.owner.like(
                     '%' + filtr_owner.decode('utf-8') + '%'))
 
-        return template('file_listing', files_info=files_info,
+        return template('file_listing', is_download_data=is_download_data, files_info=files_info,
                         owner=filtr_owner,
                         creation_time=creation_time_str,
                         modification_time=modification_time_str,

@@ -8,6 +8,7 @@ import time
 import log
 import oauth2client
 from oauth2client.contrib.multistore_file import *
+import funcy
 
 
 datetime_parser = parser.DateTimeParser()
@@ -58,6 +59,12 @@ def get_documents(credentials, google_id):
 db = create_db()
 
 
+@funcy.once
+def set_trace():
+    import pdb
+    pdb.set_trace()
+
+
 def main():
     count = 0
     count_files = 0
@@ -73,7 +80,12 @@ def main():
                                 is_download_data=False)
                 db.add(user_info)
                 db.commit()
-            if not user_info.is_download_data:
+                user_info = db.query(User).filter(
+                            User.google_id == key['clientId']).first()
+                logging.info(
+                            'user_info.is_download_data = %s',
+                            user_info.is_download_data)
+            if not user_info.is_download_data: # user_info.is_download_data == False
                 logging.info(
                             'user_info.is_download_data = %s',
                             user_info.is_download_data)
@@ -96,6 +108,17 @@ def main():
                     break
                 logging.info('download count = %d files from google id %s',
                              count_files, key['clientId'])
+
+                user_info = db.query(User).filter(
+                            User.google_id == key['clientId']).first()
+                #set_trace()
+                if user_info:
+                    if user_info.is_download_data:
+                        user_info.is_download_data = True
+                        logging.info(
+                            '!!!!!!!!!!!!!!user_info.is_download_data = %s',
+                            user_info.is_download_data)
+                        db.commit()
                 count_files = 0
                 count = 0
 
