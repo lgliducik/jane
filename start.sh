@@ -16,6 +16,6 @@ killall() {
 }
 
 python server.py &
-#python fetcher.py &
+python fetcher.py &
 
 cat # wait forever
