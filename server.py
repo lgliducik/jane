@@ -106,7 +106,7 @@ def index(db):
         filtr_owner = ''
         modification_time_str = ''
         creation_time_str = ''
-        header_str = ''
+        filtr_header = ''
         link_str = ''
         last_modification_author_str = ''
         is_public_access_str = ''
@@ -114,7 +114,7 @@ def index(db):
         permission_access_str = ''
         if request.method == 'POST':
             log.info('filtering files...')
-            filtr_owner = request.POST.dict['owner'][0]
+            filtr_header = request.POST.dict['header'][0]
             parser = arrow.parser.DateTimeParser()
             creation_time_str = request.POST.dict['creation_time'][0]
             if creation_time_str:
@@ -136,12 +136,12 @@ def index(db):
                     Document.modification_time > modification_time,
                     Document.google_code_id == user_name)
 
-            if filtr_owner:
+            if filtr_header:
                 log.info(
-                    'filtering files owner include substring = %s',
-                    filtr_owner)
-                files_info = db.query(Document).filter(Document.owner.like(
-                    '%' + filtr_owner.decode('utf-8') + '%'),
+                    'filtering files header include substring = %s',
+                    filtr_header)
+                files_info = db.query(Document).filter(Document.header.like(
+                    '%' + filtr_header.decode('utf-8') + '%'),
                     Document.google_code_id == user_name)
 
         return template('file_listing', is_download_data=is_download_data,
@@ -149,7 +149,7 @@ def index(db):
                         owner=filtr_owner,
                         creation_time=creation_time_str,
                         modification_time=modification_time_str,
-                        header=header_str,
+                        header=filtr_header,
                         link=link_str,
                         last_modification_author=last_modification_author_str,
                         is_public_access=is_public_access_str,
