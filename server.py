@@ -159,4 +159,4 @@ def index(db):
 
 
 if __name__ == '__main__':
-    bottle.run(host='localhost', port=8080, app=app_with_session)
+    bottle.run(host='0.0.0.0', port=80, app=app_with_session)
