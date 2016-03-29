@@ -1,20 +1,20 @@
-from bottle import route, run, template, redirect, request
+from bottle import template, redirect, request
+from oauth2client.contrib.multistore_file import get_credential_storage
 from beaker.middleware import SessionMiddleware
 from google_api import flow, scope
 from apiclient.discovery import build
+from database import Document, sql_alchemy_plugin, User, create_db
 import httplib2
 import bottle
-from bottle import HTTPError
-from database import Document, sql_alchemy_plugin, User, create_db
-from bottle import get, post, request
-from datetime import datetime
 import arrow
 import logging
 import funcy
-import oauth2client
-from oauth2client.contrib.multistore_file import get_credential_storage
-import log
+import log as log_module
 
+
+log_module.configure_logging()
+
+log = logging.getLogger("server")
 
 app = bottle.Bottle()
 app.install(sql_alchemy_plugin)
@@ -43,6 +43,21 @@ def get_user_info(credentials):
     info = people_resource.get(resourceName='people/me').execute()
     return info['names'][0]['metadata']['source']['id']
 
+def get_user(db, google_id):
+    user = db.query(User).filter_by(google_id=google_id).first()
+    if not user:
+        user = User(google_id=google_id, is_download_data=False)
+        db.add(user)
+        db.commit()
+        log.info(
+            ('add new user with google_id %s '
+             'in User table (is_download_data = %s)'),
+            google_id,
+            user.is_download_data)
+    return user
+
+
+
 
 @app.route('/auth_result')
 def auth_result(db):
@@ -52,18 +67,14 @@ def auth_result(db):
     google_id = get_user_info(credentials)
     session['google_id'] = google_id
     session.save()
-    storage = get_credential_storage(
-                                    'test_storage.txt',
-                                    google_id,
-                                    'user_agent',
-                                    scope)
-    # import ipdb; ipdb.set_trace()
+    storage = get_credential_storage('test_storage.txt',
+                                     google_id,
+                                     'user_agent',
+                                     scope)
     storage.put(credentials)
-    if not db.query(User).filter_by(google_id=google_id).first():
-        user = User(google_id=google_id, is_download_data=False)
-        logging.info('is_download_data %s', 'False')
-        db.add(user)
-        db.commit()
+    get_user(db, google_id)
+    log.info('put credentials in storage file  %s', credentials)
+
     return redirect('/')
 
 
@@ -79,17 +90,19 @@ def index(db):
     user_name = session.get('google_id')
     if user_name is None:
         return redirect(auth_uri)
-        logging.info('don''t authorized user_name %s', user_name)
+        log.info(
+            'don''t authorized user_name (google_id = %s)',
+            str(user_name))
     else:
-        logging.info('authorized user_name %s', user_name)
-        user_info = db.query(User).filter(
-                            User.google_id == user_name).first()
-        #set_trace()
-        if user_info:
-            if user_info.is_download_data:
-                is_download_data = user_info.is_download_data
+        log.info(
+            'authorized user_name (google_id = %s)',
+            str(user_name))
+        user_info = get_user(db, user_name)
+        is_download_data = False
+        if user_info.is_download_data:
+            is_download_data = user_info.is_download_data
         files_info = db.query(Document).filter(
-                                    Document.google_code_id == user_name).all()
+            Document.google_code_id == user_name).all()
         filtr_owner = ''
         modification_time_str = ''
         creation_time_str = ''
@@ -100,26 +113,39 @@ def index(db):
         type_access_str = ''
         permission_access_str = ''
         if request.method == 'POST':
-            logging.info('filtering files')
+            log.info('filtering files...')
             filtr_owner = request.POST.dict['owner'][0]
             parser = arrow.parser.DateTimeParser()
             creation_time_str = request.POST.dict['creation_time'][0]
             if creation_time_str:
                 creation_time = parser.parse_iso(creation_time_str)
+                log.info(
+                    'filtering files creation_time > %s',
+                    creation_time_str)
                 files_info = db.query(Document).filter(
-                                        Document.creation_time > creation_time)
+                    Document.creation_time > creation_time,
+                    Document.google_code_id == user_name)
             modification_time_str = request.POST.dict['modification_time'][0]
             if modification_time_str:
                 modification_time = parser.parse_iso(
-                                    request.POST.dict['modification_time'][0])
+                    request.POST.dict['modification_time'][0])
+                log.info(
+                    'filtering files modification_time > %s',
+                    modification_time_str)
                 files_info = db.query(Document).filter(
-                                Document.modification_time > modification_time)
+                    Document.modification_time > modification_time,
+                    Document.google_code_id == user_name)
 
             if filtr_owner:
+                log.info(
+                    'filtering files owner include substring = %s',
+                    filtr_owner)
                 files_info = db.query(Document).filter(Document.owner.like(
-                    '%' + filtr_owner.decode('utf-8') + '%'))
+                    '%' + filtr_owner.decode('utf-8') + '%'),
+                    Document.google_code_id == user_name)
 
-        return template('file_listing', is_download_data=is_download_data, files_info=files_info,
+        return template('file_listing', is_download_data=is_download_data,
+                        files_info=files_info,
                         owner=filtr_owner,
                         creation_time=creation_time_str,
                         modification_time=modification_time_str,

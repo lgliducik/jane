@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<body>
+<p>User ID {{user_name}}</p>
+%if is_download_data:
+  <form method="post" action="/">
+    <p><b>Владелец:</b><br>
+    <input type="text" name='owner' 
+    % if owner: 
+      value={{owner}} 
+    % end 
+    size="10">
+    <p><b>Время создания:</b><br>
+    <input type="datetime-local" name="creation_time"
+    % if creation_time: 
+      value={{creation_time}} 
+    % end 
+    size="10">
+    <p><b>Время модификации:</b><br>
+    <input  type="text" name="modification_time" 
+    % if modification_time: 
+      value={{modification_time}} 
+    % end 
+    size="10">
+    <p><b>Заголовок:</b><br>
+    <input type="text" name='header' 
+    % if header: 
+      value={{header}} 
+    % end 
+    size="10">
+    <p><b>Ссылка:</b><br>
+    <input type="text" name='link' 
+    % if link: 
+      value={{link}} 
+    % end 
+    size="10">
+    <p><b>Автор последней модификации:</b><br>
+    <input type="text" name='last_modification_author' 
+    % if last_modification_author: 
+      value={{last_modification_author}} 
+    % end 
+    size="10">
+    <p><b>Общий доступ:</b><br>
+    <input type="text" name='is_public_access' 
+    % if is_public_access: 
+      value={{is_public_access}} 
+    % end 
+    size="10">
+    <p><b>Тип доступа:</b><br>
+    <input type="text" name='type_access' 
+    % if type_access: 
+      value={{type_access}} 
+    % end 
+    size="10">
+    <p><b>Разрешение на доступ к документу:</b><br>
+    <input type="text" name='permission_access' 
+    % if permission_access: 
+      value={{permission_access}} 
+    % end 
+    size="10">
+    <p><input type="submit" method="post" value="Фильтровать">
+  </form>
+
+
+  <table border="1">
+   <caption>Таблица файлов</caption>
+   <tr>
+    <th>Владелец</th>
+    <th>Время создания</th>
+    <th>Время модификации</th>
+    <th>Заголовок</th>
+    <th>Ссылка</th>
+    <th>Автор последней модификации</th>
+    <th>Общий доступ</th>
+    <th>Тип доступа</th>
+    <th>Разрешение на доступ к документу</th>
+   </tr>
+   % for file_info in files_info:
+    <tr><td>{{file_info.owner}}</td>
+        <td>{{file_info.creation_time}}</td>
+        <td>{{file_info.modification_time}}</td>
+        <td>{{file_info.header}}</td>
+        <td><a href={{file_info.link}}>{{file_info.link}}</a></td>
+        <td>{{file_info.last_modification_author}}</td>
+        <td>{{file_info.is_public_access}}</td>
+        <td>{{file_info.type_access}}</td>
+        <td>{{file_info.permission_access}}</td>
+    </tr>
+   % end
+  </table>
+%else:
+  <p>Пожалуйста, подождите, файлы загружаются.</p>
+  <progress max="100" value="25">
+  Загружено на <span id="value">25</span>%
+  </progress>
+%end
+</body>
+</html>

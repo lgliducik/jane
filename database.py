@@ -2,17 +2,14 @@ from bottle.ext import sqlalchemy as bottle_sqlalchemy
 from sqlalchemy import (
     create_engine,
     Column,
-    Integer,
     Sequence,
-    String,
-    ForeignKey,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import DateTime, UnicodeText, Boolean, Enum, Integer
 from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
-engine = create_engine('sqlite:///documents.db', echo=True)
+engine = create_engine('sqlite:///documents.db')
 
 sql_alchemy_plugin = bottle_sqlalchemy.Plugin(
     engine,         # SQLAlchemy engine created with create_engine function.
@@ -48,8 +45,8 @@ class Document(Base):
     is_public_access = Column(Integer())
     type_access = Column('type_access', Enum('1', '2', '3'))
     permission_access = Column(
-                                'permission_access',
-                                Enum('owner', 'reader', 'writer'))
+        'permission_access',
+        Enum('owner', 'reader', 'writer'))
     google_code_id = Column(Integer)
 
 
